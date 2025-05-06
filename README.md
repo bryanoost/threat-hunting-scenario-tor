@@ -25,10 +25,10 @@ Management suspects that some employees may be using TOR browsers to bypass netw
 
 ### 1. Searched the `DeviceFileEvents` Table
 
-Searched DeviceFileEvents table for any word that contained the string “tor”. Discovered     
-probable download of Tor installer by employee account named “behelit”. Observed many Tor-related files copied to desktop and the subsequent creation of file named tor-shopping-list.txt at 2025-05-02T19:07:29.038172Z. 
+Searched `DeviceFileEvents` table for any word that contained the string “tor”. Discovered     
+probable download of TOR installer by employee account named “behelit”. Observed many TOR-related files copied to desktop and the subsequent creation of file named `tor-shopping-list.txt` at `2025-05-02T19:07:29.038172Z`. 
 
-These events began at: 2025-05-02T18:42:12.7399542Z
+These events began at: `2025-05-02T18:42:12.7399542Z`
 
 **Query used to locate events:**
 
@@ -47,24 +47,26 @@ DeviceFileEvents
 
 ### 2. Searched the `DeviceProcessEvents` Table
 
-Searched for any `ProcessCommandLine` that contained the string "tor-browser-windows-x86_64-portable-14.0.1.exe". Based on the logs returned, at `2024-11-08T22:16:47.4484567Z`, an employee on the "threat-hunt-lab" device ran the file `tor-browser-windows-x86_64-portable-14.0.1.exe` from their Downloads folder, using a command that triggered a silent installation.
+Searched `DeviceProcessEvents` table for any `ProcessCommandLine` events that contained the string “tor-browser-windows”. Based on logs returned, at `2025-05-02T18:48:35.0226137Z`, the employee on the device “behelit-threat-” ran the file `tor-browser-windows-x86_64-portable-14.5.1.exe` from their Downloads folder, using a command that triggered a silent installation.
 
 **Query used to locate event:**
 
 ```kql
 
-DeviceProcessEvents  
-| where DeviceName == "threat-hunt-lab"  
-| where ProcessCommandLine contains "tor-browser-windows-x86_64-portable-14.0.1.exe"  
-| project Timestamp, DeviceName, AccountName, ActionType, FileName, FolderPath, SHA256, ProcessCommandLine
+DeviceProcessEvents
+| where ProcessCommandLine contains "tor-browser-windows"
+| project Timestamp, DeviceName, ActionType, FileName, ProcessCommandLine, AccountName, FolderPath, SHA256
+| where DeviceName == "behelit-threat-"
 ```
-<img width="1212" alt="image" src="https://github.com/user-attachments/assets/b07ac4b4-9cb3-4834-8fac-9f5f29709d78">
+<img width="1322" alt="image" src="https://github.com/user-attachments/assets/35962481-e150-44d8-8bc2-a13df4c7ee6f">
+
 
 ---
 
 ### 3. Searched the `DeviceProcessEvents` Table for TOR Browser Execution
 
-Searched for any indication that user "employee" actually opened the TOR browser. There was evidence that they did open it at `2024-11-08T22:17:21.6357935Z`. There were several other instances of `firefox.exe` (TOR) as well as `tor.exe` spawned afterwards.
+Searched `DeviceProcessEvents` for any indication that user “behelit" did indeed open the TOR browser. Logs indicate that at `2025-05-02T18:49:08.1620705Z` the TOR browser was opened. Several other instances of `firefox.exe` (TOR) and `tor.exe` were spawned afterwards.
+
 
 **Query used to locate events:**
 
@@ -75,26 +77,28 @@ DeviceProcessEvents
 | project Timestamp, DeviceName, AccountName, ActionType, FileName, FolderPath, SHA256, ProcessCommandLine  
 | order by Timestamp desc
 ```
-<img width="1212" alt="image" src="https://github.com/user-attachments/assets/b13707ae-8c2d-4081-a381-2b521d3a0d8f">
+<img width="1334" alt="image" src="https://github.com/user-attachments/assets/7bb7732f-89de-4de3-9275-a25c351670ae">
 
 ---
 
 ### 4. Searched the `DeviceNetworkEvents` Table for TOR Network Connections
+ 
+Searched `DeviceNetworkEvents` for any indication that the TOR browser was used to establish a connection using known TOR port numbers.
 
-Searched for any indication the TOR browser was used to establish a connection using any of the known TOR ports. At `2024-11-08T22:18:01.1246358Z`, an employee on the "threat-hunt-lab" device successfully established a connection to the remote IP address `176.198.159.33` on port `9001`. The connection was initiated by the process `tor.exe`, located in the folder `c:\users\employee\desktop\tor browser\browser\torbrowser\tor\tor.exe`. There were a couple of other connections to sites over port `443`.
+Logs show the user on the device “behelit-threat-” establishing a connection to the remote IP address `89.58.34.53` on port `9001`. The connection was initiated by the `tor.exe` process, located in folder `c:\users\behelit\desktop\tor browser\browser\torbrowser\tor\tor.exe`. Additional connections to sites were made over port `443`.
 
 **Query used to locate events:**
 
 ```kql
-DeviceNetworkEvents  
-| where DeviceName == "threat-hunt-lab"  
-| where InitiatingProcessAccountName != "system"  
-| where InitiatingProcessFileName in ("tor.exe", "firefox.exe")  
-| where RemotePort in ("9001", "9030", "9040", "9050", "9051", "9150", "80", "443")  
-| project Timestamp, DeviceName, InitiatingProcessAccountName, ActionType, RemoteIP, RemotePort, RemoteUrl, InitiatingProcessFileName, InitiatingProcessFolderPath  
+DeviceNetworkEvents
+| where DeviceName == "behelit-threat-"
+| where InitiatingProcessAccountName != "system"
+| where RemotePort in ("9001", "9030", "9040", "9050", "9051", "9150", "80", "443")
+| where InitiatingProcessFileName in ("tor.exe", "firefox.exe")
+| project Timestamp, DeviceName, InitiatingProcessAccountName, InitiatingProcessFileName, InitiatingProcessFolderPath, ActionType, RemoteIP, RemotePort, RemoteUrl
 | order by Timestamp desc
 ```
-<img width="1212" alt="image" src="https://github.com/user-attachments/assets/87a02b5b-7d12-4f53-9255-f5e750d0e3cb">
+<img width="1313" alt="image" src="https://github.com/user-attachments/assets/91c60e80-b7e9-4a84-a45a-bb3d1acc61a2"/>
 
 ---
 
